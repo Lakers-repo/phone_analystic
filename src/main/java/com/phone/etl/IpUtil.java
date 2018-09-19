@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 
 /**
  * @ClassName IpUtil
- * @Author lyd
+ * @Author 奚海波
  * @Date $ $
  * @Vesion 1.0
  * @Description
