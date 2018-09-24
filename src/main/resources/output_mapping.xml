@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+    <!--注意点：1、这里的name属性必须和KPI枚举里面的字段一一对应，这就是用来寻找对应的SQL语句，也就是用来将结果数据存储到哪张表中-->
+    <!--2、这里created是插入数据库时间，需要我们在MapReduce的runner类中conf设置参数，否则就是空-->
+    <!--3、这里的duplicate字段的含义：这个语法的目的是为了解决重复性（这里是id 也就是key），当数据库中存在某个记录时，执行这条语句会更新，而不存在这条记录时，会插入它-->
+    <!--4、不能讲标点符号写成中文的，气死我了-->
+    <!--用户模块下的新增用户-->
+    <property>
+        <name>new_user</name>
+        <value>insert into `stats_user`(`date_dimension_id`,
+        `platform_dimension_id`,
+        `new_install_users`,
+            `created`)
+        values(?,?,?,?) on duplicate key update `new_install_users` = ?
+        </value>
+    </property>
+
+    <!--浏览器模块下的新增用户-->
+    <property>
+        <name>browser_new_user</name>
+        <value>insert into `stats_device_browser`(
+            `date_dimension_id`,
+            `platform_dimension_id`,
+            `browser_dimension_id`,
+            `new_install_users`,
+            `created`
+            ) values(?,?,?,?,?) on duplicate key update `new_install_users` = ?
+        </value>
+    </property>
+
+    <property>
+        <name>active_user</name>
+        <value>insert into `stats_user`(
+            `date_dimension_id`,
+            `platform_dimension_id`,
+            `active_users`,
+            `created`
+            ) values(?,?,?,?) on duplicate key update `active_users` = ?
+        </value>
+    </property>
+
+    <property>
+        <name>browser_active_user</name>
+        <value>insert into `stats_device_browser`(
+            `date_dimension_id`,
+            `platform_dimension_id`,
+            `browser_dimension_id`,
+            `active_users`,
+            `created`
+            ) values(?,?,?,?,?) on duplicate key update `active_users` = ?
+        </value>
+    </property>
+
+
+    <property>
+        <name>active_member</name>
+        <value>insert into `stats_user`(
+            `date_dimension_id`,
+            `platform_dimension_id`,
+            `active_members`,
+            `created`
+            ) values(?,?,?,?) on duplicate key update `active_members` = ?
+        </value>
+    </property>
+
+    <property>
+        <name>browser_active_member</name>
+        <value>insert into `stats_device_browser`(
+            `date_dimension_id`,
+            `platform_dimension_id`,
+            `browser_dimension_id`,
+            `active_members`,
+            `created`
+            ) values(?,?,?,?,?) on duplicate key update `active_members` = ?
+        </value>
+    </property>
+
+
+    <property>
+        <name>new_member</name>
+        <value>insert into `stats_user`(
+            `date_dimension_id`,
+            `platform_dimension_id`,
+            `new_members`,
+            `created`
+            ) values(?,?,?,?) on duplicate key update `new_members` = ?
+        </value>
+    </property>
+
+    <property>
+        <name>browser_new_member</name>
+        <value>insert into `stats_device_browser`(
+            `date_dimension_id`,
+            `platform_dimension_id`,
+            `browser_dimension_id`,
+            `new_members`,
+            `created`
+            ) values(?,?,?,?,?) on duplicate key update `new_members` = ?
+        </value>
+    </property>
+</configuration>

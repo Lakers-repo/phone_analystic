@@ -14,9 +14,11 @@ public class IpTest {
     public static void main(String[] args) {
         System.out.println(IPSeeker.getInstance().getCountry("112.111.11.12"));
 
+        //纯真数据库解析
         System.out.println(IpUtil.getRegionInfoByIp("112.111.11.12"));
 
         try {
+            //淘宝IP解析测试
             System.out.println(IpUtil.parserIp1("http://ip.taobao.com/service/getIpInfo.php?ip=112.111.11.12","utf-8"));
         } catch (Exception e) {
             e.printStackTrace();

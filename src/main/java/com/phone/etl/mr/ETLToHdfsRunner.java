@@ -93,7 +93,7 @@ public class ETLToHdfsRunner implements Tool{
     }
 
     /**
-     *
+     * 处理参数
      * @param args
      */
     private void handleArgs(Configuration conf,String[] args){
@@ -118,7 +118,6 @@ public class ETLToHdfsRunner implements Tool{
             //将date存储到conf中 --- key-value
             conf.set(GlobalConstants.RUNNING_DATE,date);
         }
-
     }
 
     /**

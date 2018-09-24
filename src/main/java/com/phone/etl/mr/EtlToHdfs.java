@@ -44,7 +44,7 @@ public class EtlToHdfs {
                 //可以根据事件来分别输出？？？
                 Map<String,String> map = LogUtil.parserLog(line);
 
-                //获取事件的名
+                //获取事件的名称
                 String eventName = map.get(EventLogContant.EVENT_COLUMN_NAME_EVENT_NAME);
                 EventLogContant.EventEnum event = EventLogContant.EventEnum.valueOfAlias(eventName);
 
@@ -112,6 +112,7 @@ public class EtlToHdfs {
                         case "city": this.k.setCity(en.getValue()); break;
                     }
                 }
+
                 this.outputRecords ++ ;
                 context.write(k,NullWritable.get());
             } catch (Exception e) {

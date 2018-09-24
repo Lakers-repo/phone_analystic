@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+    <property>
+        <!--这里固定写法是writter_kpi的别名,为了其他指标也可以使用，增强代码的健壮性-->
+        <!--用户模块下的新增用户-->
+        <name>writter_new_user</name>
+        <value>com.phone.analystic.mr.newuser.NewUserOutputWritter</value>
+    </property>
+
+    <!--浏览器模块下的新增用户-->
+    <property>
+        <name>writter_browser_new_user</name>
+        <value>com.phone.analystic.mr.newuser.NewUserOutputWritter</value>
+    </property>
+
+    <!--用户模块下的活跃用户-->
+    <property>
+        <name>writter_active_user</name>
+        <value>com.phone.analystic.mr.activeuser.ActiveUserOutputWritter</value>
+    </property>
+
+    <!--浏览器模块下的活跃用户-->
+    <property>
+        <name>writter_browser_active_user</name>
+        <value>com.phone.analystic.mr.activevipuser.ActiveUserOutputWritter</value>
+    </property>
+
+    <!--用户模块下的活跃会员-->
+    <property>
+        <name>writter_active_member</name>
+        <value>com.phone.analystic.mr.activevipuser.ActiveMemberUserOutputWritter</value>
+    </property>
+
+    <!--浏览器模块下的活跃会员-->
+    <property>
+        <name>writter_browser_active_member</name>
+        <value>com.phone.analystic.mr.activevipuser.ActiveMemberUserOutputWritter</value>
+    </property>
+
+    <!--用户模块下的新增会员-->
+    <property>
+        <name>writter_new_member</name>
+        <value>com.phone.analystic.mr.vipuser.VipUserOutputWritter</value>
+    </property>
+
+    <!--浏览器模块下的新增会员-->
+    <property>
+        <name>writter_browser_new_member</name>
+        <value>com.phone.analystic.mr.vipuser.VipUserOutputWritter</value>
+    </property>
+
+</configuration>

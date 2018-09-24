@@ -9,16 +9,16 @@
 
 <property>
     <name>mapreduce.framework.name</name>
-    <value>yarn</value>
+    <value>local</value>
 </property>
 
-<property>
-    <name>yarn.resourcemanager.hostname</name>
-    <value>hadoop02</value>
-</property>
+<!--<property>-->
+    <!--<name>yarn.resourcemanager.hostname</name>-->
+    <!--<value>hadoop02</value>-->
+<!--</property>-->
 
-    <property>
-        <name>mapreduce.app-submission.cross-platform</name>
-        <value>true</value>
-    </property>
+    <!--<property>-->
+        <!--<name>mapreduce.app-submission.cross-platform</name>-->
+        <!--<value>true</value>-->
+    <!--</property>-->
 </configuration>
