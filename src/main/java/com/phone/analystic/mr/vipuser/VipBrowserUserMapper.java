@@ -10,6 +10,8 @@
  */
 package com.phone.analystic.mr.vipuser;
 
+import com.phone.Util.JdbcUtil;
+import com.phone.Util.MemberUtil;
 import com.phone.analystic.modle.StatsCommonDimension;
 import com.phone.analystic.modle.StatsUserDimension;
 import com.phone.analystic.modle.base.BrowserDimension;
@@ -26,6 +28,7 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.sql.Connection;
 
 /**
  * 〈一句话功能简述〉<br> 
@@ -40,8 +43,17 @@ public class VipBrowserUserMapper extends Mapper<LongWritable,Text,StatsUserDime
     private static final Logger logger = Logger.getLogger(VipBrowserUserMapper.class);
     private StatsUserDimension k = new StatsUserDimension();
     private TimeOutPutValue v = new TimeOutPutValue();
+    private Connection conn = null;//获取数据库连接
 
     private KPIDimension newBrowserMemberKpi = new KPIDimension(KpiType.BROWSER_NEW_MEMBER.kpiName);
+
+    //该方法在map方法前，只执行一次
+    @Override
+    protected void setup(Context context) throws IOException, InterruptedException {
+        conn = JdbcUtil.getConn();
+        MemberUtil.deleteByDay(context.getConfiguration(),conn);//记得一定要将conn传过去
+    }
+
     @Override
     protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
         String line = value.toString();
@@ -65,6 +77,17 @@ public class VipBrowserUserMapper extends Mapper<LongWritable,Text,StatsUserDime
                 return;
             }
 
+            //判断会员id是否是新会员---!表示与MemberUtil返回的结果相反（注意点）
+            if(!MemberUtil.checkMemberId(umid)){
+                logger.info("umid is invalid.memberId:"+umid);
+            }
+
+            //判断会员id是否是新会员(重点)---!表示与MemberUtil返回的结果相反（注意点）
+            if(!MemberUtil.isNewMember(umid,conn,context.getConfiguration())){
+                logger.info("umid is not new memberId.memberId:"+umid);
+                return;
+            }
+
             //构造输出的key
             long stime = Long.valueOf(serverTime);
             PlatformDimension platformDimension = PlatformDimension.getInstnce(platform);
@@ -83,9 +106,16 @@ public class VipBrowserUserMapper extends Mapper<LongWritable,Text,StatsUserDime
 
             //构建输出的value(并不需要时间time)
             this.v.setId(umid);
+            this.v.setTime(stime);
 
             //输出
             context.write(this.k,this.v);
         }
+    }
+
+    //map方法后，只执行一次
+    @Override
+    protected void cleanup(Context context) throws IOException, InterruptedException {
+        JdbcUtil.close(conn,null,null);
     }
 }

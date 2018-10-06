@@ -77,8 +77,6 @@ public class EtlToHdfs {
                 //map循环
                 for (Map.Entry<String,String> en: map.entrySet()) {
                     switch (en.getKey()){
-                        case "logs":this.k.setLogs(en.getValue()); break;
-                        case "info":this.k.setInfo(en.getValue()); break;
                         case "ver": this.k.setIp(en.getValue()); break;
                         case "s_time": this.k.setS_time(en.getValue()); break;
                         case "en": this.k.setEn(en.getValue()); break;

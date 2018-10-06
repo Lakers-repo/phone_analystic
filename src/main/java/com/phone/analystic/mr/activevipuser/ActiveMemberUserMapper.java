@@ -43,6 +43,7 @@ public class ActiveMemberUserMapper extends Mapper<LongWritable,Text,StatsUserDi
     private TimeOutPutValue v = new TimeOutPutValue();
 
     private KPIDimension activeMemberUserKpi = new KPIDimension(KpiType.ACTIVE_MEMBER.kpiName);
+    private KPIDimension activeBrowserMemberUserKpi = new KPIDimension(KpiType.BROWSER_ACTIVE_MEMBER.kpiName);
     @Override
     protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
         String line = value.toString();
@@ -59,6 +60,9 @@ public class ActiveMemberUserMapper extends Mapper<LongWritable,Text,StatsUserDi
             String serverTime = fields[1];
             String platform = fields[13];
             String umid = fields[4];
+            String browserName = fields[24];
+            String browserVersion = fields[25];
+
             if(StringUtils.isEmpty(serverTime) || StringUtils.isEmpty(umid)){
                 logger.info("serverTime & active_mem_umid is null serverTime:"+serverTime+".active_mem_umid"+umid);
                 return;
@@ -68,24 +72,25 @@ public class ActiveMemberUserMapper extends Mapper<LongWritable,Text,StatsUserDi
             long stime = Long.valueOf(serverTime);
             PlatformDimension platformDimension = PlatformDimension.getInstnce(platform);
             DateDimension dateDimension = DateDimension.buildDate(stime, DateEnum.DAY);
-
             StatsCommonDimension statsCommonDimension = this.k.getStatsCommonDimension();
 
             //为StatsCommonDimension设值
             statsCommonDimension.setDateDimension(dateDimension);
             statsCommonDimension.setPlatformDimension(platformDimension);
-            statsCommonDimension.setKpiDimension(activeMemberUserKpi);
 
             //设置默认的浏览器对象(因为新增用户指标并不需要浏览器维度，所以赋值为null)
             BrowserDimension defaultBrowserDimension = new BrowserDimension("","");
+            statsCommonDimension.setKpiDimension(activeMemberUserKpi);
             this.k.setBrowserDimension(defaultBrowserDimension);
             this.k.setStatsCommonDimension(statsCommonDimension);
+            this.v.setId(umid); //构建输出的value(并不需要时间time)
+            context.write(this.k,this.v);//输出
 
-            //构建输出的value(并不需要时间time)
-            this.v.setId(umid);
-
-            //输出
-            context.write(this.k,this.v);
+            statsCommonDimension.setKpiDimension(activeBrowserMemberUserKpi);
+            BrowserDimension browserDimension = new BrowserDimension(browserName,browserVersion);
+            this.k.setBrowserDimension(browserDimension);
+            this.k.setStatsCommonDimension(statsCommonDimension);
+            context.write(this.k,this.v);//输出
         }
     }
 }

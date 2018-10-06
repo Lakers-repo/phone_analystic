@@ -11,7 +11,7 @@ import java.sql.PreparedStatement;
 /**
  * 操作结果表的接口---将结果写入到MySQL中
  */
-public interface IOutputWritter {
+public interface IOutputWriter {
     //输入的key和value的类型必须是基类，以便于其他指标的是实现---代码的健壮性
 
     /**

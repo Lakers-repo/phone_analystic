@@ -10,6 +10,9 @@
  */
 package com.phone.analystic.modle.base;
 
+import com.phone.common.GlobalConstants;
+import org.apache.commons.lang.StringUtils;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -41,6 +44,21 @@ public class LocationDimension extends BaseDimension{
         this(country,province,city);
         this.id = id;
 
+    }
+
+    public static LocationDimension buildLocal(String country,String province,String city){
+        if(StringUtils.isEmpty(country)){
+            country = province = city = GlobalConstants.DEFAULT_VALUE;
+        }
+
+        if(StringUtils.isEmpty(province)){
+            province = city = GlobalConstants.DEFAULT_VALUE;
+        }
+
+        if(StringUtils.isEmpty(city)){
+            city = GlobalConstants.DEFAULT_VALUE;
+        }
+        return new LocationDimension(country,province,city);
     }
 
     @Override

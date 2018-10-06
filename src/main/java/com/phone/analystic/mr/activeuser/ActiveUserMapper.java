@@ -42,6 +42,9 @@ public class ActiveUserMapper extends Mapper<LongWritable,Text,StatsUserDimensio
     private TimeOutPutValue v = new TimeOutPutValue();
 
     private KPIDimension activeUserKpi = new KPIDimension(KpiType.ACTIVE_USER.kpiName);
+    private KPIDimension activeBrowserUserKpi = new KPIDimension(KpiType.BROWSER_ACTIVE_USER.kpiName);
+//    private KPIDimension hourlyUserKpi = new KPIDimension(KpiType.HOURLY_ACTIVE_USER.kpiName);//这样写map端输出量较大
+
     @Override
     protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
         String line = value.toString();
@@ -53,13 +56,14 @@ public class ActiveUserMapper extends Mapper<LongWritable,Text,StatsUserDimensio
         String[] fields = line.split("\u0001");
         //en是事件名称
         String en = fields[2];
-        if(StringUtils.isNotEmpty(en)){
             //获取想要的字段
             String serverTime = fields[1];
             String platform = fields[13];
             String uuid = fields[3];
-            if(StringUtils.isEmpty(serverTime) || StringUtils.isEmpty(uuid)){
-                logger.info("serverTime & active_uuid is null serverTime:"+serverTime+".active_uuid"+uuid);
+            String browserName = fields[24];
+            String browserVersion = fields[25];
+            if (StringUtils.isEmpty(serverTime) || StringUtils.isEmpty(uuid)) {
+                logger.info("serverTime & active_uuid is null serverTime:" + serverTime + ".active_uuid" + uuid);
                 return;
             }
 
@@ -67,24 +71,31 @@ public class ActiveUserMapper extends Mapper<LongWritable,Text,StatsUserDimensio
             long stime = Long.valueOf(serverTime);
             PlatformDimension platformDimension = PlatformDimension.getInstnce(platform);
             DateDimension dateDimension = DateDimension.buildDate(stime, DateEnum.DAY);
-
             StatsCommonDimension statsCommonDimension = this.k.getStatsCommonDimension();
 
             //为StatsCommonDimension设值
             statsCommonDimension.setDateDimension(dateDimension);
             statsCommonDimension.setPlatformDimension(platformDimension);
-            statsCommonDimension.setKpiDimension(activeUserKpi);
 
+            //用户模块下的活跃用户
             //设置默认的浏览器对象(因为新增用户指标并不需要浏览器维度，所以赋值为null)
-            BrowserDimension defaultBrowserDimension = new BrowserDimension("","");
+            BrowserDimension defaultBrowserDimension = new BrowserDimension("", "");
+            statsCommonDimension.setKpiDimension(activeUserKpi);
             this.k.setBrowserDimension(defaultBrowserDimension);
             this.k.setStatsCommonDimension(statsCommonDimension);
+            this.v.setId(uuid);//构建输出的value(并不需要时间time)
+            this.v.setTime(stime);
+            context.write(this.k, this.v); //输出
 
-            //构建输出的value(并不需要时间time)
-            this.v.setId(uuid);
+//            statsCommonDimension.setKpiDimension(hourlyUserKpi);
+//            this.k.setStatsCommonDimension(statsCommonDimension);
+//            context.write(this.k,this.v);
 
-            //输出
-            context.write(this.k,this.v);
-        }
+            //浏览器模块新增用户
+            statsCommonDimension.setKpiDimension(activeBrowserUserKpi);
+            BrowserDimension browserDimension = new BrowserDimension(browserName, browserVersion);
+            this.k.setBrowserDimension(browserDimension);
+            this.k.setStatsCommonDimension(statsCommonDimension);
+            context.write(this.k, this.v);//输出
     }
 }

@@ -62,10 +62,6 @@ public class EventLogContant {
     /**
      * 日志相关
      */
-    public static final String HBASE_TABLE_HOME = "logs";
-
-    public static final String HBASE_COLUMN_FAMILY = "info";
-
     public static final String EVENT_COLUMN_NAME_VERSION = "ver";
 
     public static final String EVENT_COLUMN_NAME_SERVER_TIME = "s_time";

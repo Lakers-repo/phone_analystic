@@ -77,7 +77,6 @@
         </value>
     </property>
 
-
     <property>
         <name>new_member</name>
         <value>insert into `stats_user`(
@@ -98,6 +97,97 @@
             `new_members`,
             `created`
             ) values(?,?,?,?,?) on duplicate key update `new_members` = ?
+        </value>
+    </property>
+
+    <property>
+        <name>member_info</name>
+        <value>insert into `member_info`(
+            `member_id`,
+            `last_visit_date`,
+            `member_id_server_date`,
+            `created`
+            ) values(?,?,?,?) on duplicate key update `last_visit_date` = ?
+        </value>
+    </property>
+
+    <!--session用户模块-->
+    <property>
+        <name>session</name>
+        <value>insert into `stats_user`(
+            `date_dimension_id`,
+            `platform_dimension_id`,
+            `sessions`,
+            `sessions_length`,
+            `created`
+            ) values(?,?,?,?,?) on duplicate key update `sessions` = ? ,  `sessions_length` = ?
+        </value>
+    </property>
+
+
+    <!--session浏览器模块-->
+    <property>
+        <name>browser_session</name>
+        <value>insert into `stats_device_browser`(
+            `date_dimension_id`,
+            `platform_dimension_id`,
+            `browser_dimension_id`,
+            `sessions`,
+            `sessions_length`,
+            `created`
+            ) values(?,?,?,?,?,?) on duplicate key update `sessions` = ? ,  `sessions_length` = ?
+        </value>
+    </property>
+
+    <!--pageview-->
+    <property>
+        <name>pageview</name>
+        <value>insert into `stats_device_browser`(
+            `date_dimension_id`,
+            `platform_dimension_id`,
+            `browser_dimension_id`,
+            `pv`,
+            `created`
+            ) values(?,?,?,?,?) on duplicate key update `pv` = ?
+        </value>
+    </property>
+
+    <!--按小时统计活跃用户数-->
+    <property>
+        <name>hourly_active_user</name>
+        <value>insert into `stats_hourly`(
+            `date_dimension_id`,
+            `platform_dimension_id`,
+            `kpi_dimension_id`,
+            `hour_00`,`hour_01`,`hour_02`,`hour_03`,
+            `hour_04`,`hour_05`,`hour_06`,`hour_07`,
+            `hour_08`,`hour_09`,`hour_10`,`hour_11`,
+            `hour_12`,`hour_13`,`hour_14`,`hour_15`,
+            `hour_16`,`hour_17`,`hour_18`,`hour_19`,
+            `hour_20`,`hour_21`,`hour_22`,`hour_23`,`created`
+            ) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            on duplicate key update
+            `hour_00` = ?,`hour_01` = ?,`hour_02` = ?,`hour_03` = ?,
+            `hour_04` = ?,`hour_05` = ?,`hour_06` = ?,`hour_07` = ?,
+            `hour_08` = ?,`hour_09` = ?,`hour_10` = ?,`hour_11` = ?,
+            `hour_12` = ?,`hour_13` = ?,`hour_14` = ?,`hour_15` = ?,
+            `hour_16` = ?,`hour_17` = ?,`hour_18` = ?,`hour_19` = ?,
+            `hour_20` = ?,`hour_21` = ?,`hour_22` = ?,`hour_23` = ?
+        </value>
+    </property>
+
+    <!--local 地域模块-->
+    <property>
+        <name>local</name>
+        <value>insert into  `stats_device_location`(
+            `date_dimension_id`,
+            `platform_dimension_id`,
+            `location_dimension_id`,
+            `active_users`,
+            `sessions`,
+            `bounce_sessions`,
+            `created`
+            ) values(?,?,?,?,?,?,?) on duplicate key update `active_users`  = ? , `sessions`=? , `bounce_sessions`=?
         </value>
     </property>
 </configuration>

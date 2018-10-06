@@ -10,11 +10,16 @@
  */
 package com.phone.analystic.mr.newuser;
 
+import com.phone.Util.JdbcUtil;
 import com.phone.Util.TimeUtil;
 import com.phone.analystic.modle.StatsUserDimension;
+import com.phone.analystic.modle.base.DateDimension;
 import com.phone.analystic.modle.value.map.TimeOutPutValue;
 import com.phone.analystic.modle.value.reduce.OutPutWritable;
 import com.phone.analystic.mr.OutputToMySqlFormat;
+import com.phone.analystic.mr.service.IDimension;
+import com.phone.analystic.mr.service.impl.IDimensionImpl;
+import com.phone.common.DateEnum;
 import com.phone.common.GlobalConstants;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -26,6 +31,11 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -45,7 +55,7 @@ public class NewBrowserUserRunner implements Tool {
         try {
             ToolRunner.run(new Configuration(),new NewBrowserUserRunner(),args);
         } catch (Exception e) {
-            logger.warn("NEW_USER TO MYSQL is failed !!!",e);
+            logger.warn("BROWSER_NEW_USER TO MYSQL is failed !!!",e);
         }
     }
 
@@ -53,6 +63,7 @@ public class NewBrowserUserRunner implements Tool {
     public void setConf(Configuration configuration) {
         conf.addResource("output_mapping.xml");
         conf.addResource("output_writter.xml");
+        conf.addResource("total_mapping.xml");
         this.conf = conf;
     }
 
@@ -91,9 +102,93 @@ public class NewBrowserUserRunner implements Tool {
         this.handleInputOutput(job);
 //        return job.waitForCompletion(true)? 0:1;
         if(job.waitForCompletion(true)){
+            this.computeNewTotalUser(job);//修改1
             return 0;
         }else{
             return 1;
+        }
+    }
+
+    /**
+     * 计算新增总用户---浏览器模块
+     * @param job
+     */
+    private void computeNewTotalUser(Job job) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+            //获取运行当天时间和运行前一天时间
+            String date = job.getConfiguration().get(GlobalConstants.RUNNING_DATE);
+            long nowDay = TimeUtil.parseString2Long(date);
+            long yesterDay = nowDay - GlobalConstants.DAY_OF_MILISECONDS;
+
+            //获取对应的时间维度
+            DateDimension nowDateDimension = DateDimension.buildDate(nowDay, DateEnum.DAY);
+            DateDimension yesterdayDimension = DateDimension.buildDate(yesterDay, DateEnum.DAY);
+
+            int nowDimensionId = -1;
+            int yesterdayDimensionId = -1;
+
+            //获取维度的id
+            IDimension iDimension = new IDimensionImpl();
+            nowDimensionId = iDimension.getDimensionIdByObject(nowDateDimension);
+            yesterdayDimensionId = iDimension.getDimensionIdByObject(yesterdayDimension);
+
+            //判断对应的时间维度id是否大于0
+            conn = JdbcUtil.getConn();
+            Map<String,Integer> map = new HashMap<String,Integer>();
+            if(yesterdayDimensionId > 0){
+                ps = conn.prepareStatement(conf.get(GlobalConstants.PREFIX_TOTAL+"browser_new_total_user"));
+                //给ps赋值
+                ps.setInt(1,yesterdayDimensionId);
+                //执行SQL语句
+                rs = ps.executeQuery();
+                while(rs.next()){
+                    int platformId = rs.getInt("platform_dimension_id");
+                    int browserId = rs.getInt("browser_dimension_id");
+                    int totalNewUser = rs.getInt("total_install_users");
+                    //存储
+                    map.put(platformId+"-"+browserId+"-",totalNewUser);
+                }
+            }
+
+            if(nowDimensionId > 0){
+                ps = conn.prepareStatement(conf.get(GlobalConstants.PREFIX_TOTAL+"BROWSER_new_user"));
+                //给ps赋值
+                ps.setInt(1,nowDimensionId);
+                //执行SQL语句
+                rs = ps.executeQuery();
+                while(rs.next()){
+                    int platformId = rs.getInt("platform_dimension_id");
+                    int browserId = rs.getInt("browser_dimension_id");
+                    int newUser = rs.getInt("new_install_users");
+                    //存储
+                    //如果前一天中有相同的platformId,则将两者相加
+                    if(map.containsKey(platformId+"-"+browserId+"-")){
+                        newUser += map.get(platformId+"-"+browserId+"-");
+                    }
+                    //如果没有当天该平台下的总新增用户就是当天新增用户，添加到map中，为后一天计算准备
+                    map.put(platformId+"-"+browserId+"-",newUser);
+                }
+            }
+
+            //更新新增的总用户
+            ps = conn.prepareStatement(conf.get(GlobalConstants.PREFIX_TOTAL+"BROWSER_new_update_user"));
+            //给ps赋值
+            for(Map.Entry<String,Integer> en:map.entrySet()){
+                ps.setInt(1,nowDimensionId);
+                String[] splited = en.getKey().split("-");
+                ps.setInt(2,Integer.parseInt(splited[0]));
+                ps.setInt(3,Integer.parseInt(splited[1]));
+                ps.setInt(4,en.getValue());
+                ps.setString(5,conf.get(GlobalConstants.RUNNING_DATE));
+                ps.setInt(6,en.getValue());
+                ps.execute();
+            }
+        } catch (Exception e) {
+            logger.warn("运行统计总的新增用户失败---浏览器模块！！！",e);
         }
     }
 

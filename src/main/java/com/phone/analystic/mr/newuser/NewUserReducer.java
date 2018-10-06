@@ -39,13 +39,12 @@ public class NewUserReducer extends Reducer<StatsUserDimension,TimeOutPutValue,S
 
     @Override
     protected void reduce(StatsUserDimension key, Iterable<TimeOutPutValue> values, Context context) throws IOException, InterruptedException {
-        //清空map，因为map是在外面定义的，每一个key都需要调用一次reduce方法，也就是说上次操作会保留map中的key-value
-        map.clear();
+        map.clear();//清空map，因为map是在外面定义的，每一个key都需要调用一次reduce方法，也就是说上次操作会保留map中的key-value
 
-        //循环
-        for(TimeOutPutValue tv : values){
+        for(TimeOutPutValue tv : values){//循环
             this.unique.add(tv.getId());//将uuid取出添加到set中进行去重操作
         }
+
 
         //构造输出的value
         //根据kpi别名获取kpi类型（比较灵活） --- 第一种方法
@@ -61,6 +60,7 @@ public class NewUserReducer extends Reducer<StatsUserDimension,TimeOutPutValue,S
         this.v.setValue(this.map);
         //输出
         context.write(key,this.v);
+        this.unique.clear();//清空操作
 
         /**
          * 注意点：

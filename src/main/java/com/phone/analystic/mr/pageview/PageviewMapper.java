@@ -8,7 +8,7 @@
  * <author>          <time>          <version>          <desc>
  * 作者姓名           修改时间         版本号            描述
  */
-package com.phone.analystic.mr.newuser;
+package com.phone.analystic.mr.pageview;
 
 import com.phone.analystic.modle.StatsCommonDimension;
 import com.phone.analystic.modle.StatsUserDimension;
@@ -30,12 +30,12 @@ import java.io.IOException;
 
 /**
  * 〈一句话功能简述〉<br> 
- * 〈NewUserMapper---mapper函数 简单的封装〉
+ * 〈PageviewMapper---mapper函数 简单的封装〉
  *
  * @author 14751
  * @create 2018/9/19 
  * @since 1.0.0
- * 用户模块下的新增用户
+ *
  *
  * 注意点：每次测试前都要清空数据库中的数据
  * 新建查询---执行所有的SQL语句
@@ -61,13 +61,12 @@ truncate stats_order;
 truncate stats_user;
 truncate stats_view_depth;
  */
-public class NewUserMapper extends Mapper<LongWritable,Text,StatsUserDimension,TimeOutPutValue> {
-    private static final Logger logger = Logger.getLogger(NewUserMapper.class);
+public class PageviewMapper extends Mapper<LongWritable,Text,StatsUserDimension,TimeOutPutValue> {
+    private static final Logger logger = Logger.getLogger(PageviewMapper.class);
     private StatsUserDimension k = new StatsUserDimension();
     private TimeOutPutValue v = new TimeOutPutValue();
 
-    private KPIDimension newUserKpi = new KPIDimension(KpiType.NEW_USER.kpiName);
-    private KPIDimension newBrowserUserKpi = new KPIDimension(KpiType.BROWSER_NEW_USER.kpiName);
+    private KPIDimension pageviewKpi = new KPIDimension(KpiType.PAGEVIEW.kpiName);
 
     @Override
     protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
@@ -80,16 +79,16 @@ public class NewUserMapper extends Mapper<LongWritable,Text,StatsUserDimension,T
         String[] fields = line.split("\u0001");
         //en是事件名称
         String en = fields[2];
-        if(StringUtils.isNotEmpty(en) && en.equals(EventLogContant.EventEnum.LAUNCH.alias)){
+        if(StringUtils.isNotEmpty(en) && en.equals(EventLogContant.EventEnum.PAGEVIEW.alias)){
             //获取想要的字段
             String serverTime = fields[1];
             String platform = fields[13];
-            String uuid = fields[3];
+            String url = fields[10];
             String browserName = fields[24];
             String browserVersion = fields[25];
 
-            if(StringUtils.isEmpty(serverTime) || StringUtils.isEmpty(uuid)){
-                logger.info("serverTime & uuid is null serverTime:"+serverTime+".uuid"+uuid);
+            if(StringUtils.isEmpty(serverTime) || StringUtils.isEmpty(url)){
+                logger.info("serverTime & url is null serverTime:"+serverTime+".url"+url);
                 return;
             }
 
@@ -102,20 +101,12 @@ public class NewUserMapper extends Mapper<LongWritable,Text,StatsUserDimension,T
             statsCommonDimension.setDateDimension(dateDimension);
             statsCommonDimension.setPlatformDimension(platformDimension);
 
-            //用户模块新增用户
-            //设置默认的浏览器对象(因为新增用户指标并不需要浏览器维度，所以赋值为空)
-            BrowserDimension defaultBrowserDimension = new BrowserDimension("","");
-            statsCommonDimension.setKpiDimension(newUserKpi);
-            this.k.setBrowserDimension(defaultBrowserDimension);
-            this.k.setStatsCommonDimension(statsCommonDimension);
-            this.v.setId(uuid);
-            context.write(this.k,this.v);//输出
-
-            //浏览器模块新增用户
-            statsCommonDimension.setKpiDimension(newBrowserUserKpi);
+            statsCommonDimension.setKpiDimension(pageviewKpi);
             BrowserDimension browserDimension = new BrowserDimension(browserName,browserVersion);
             this.k.setBrowserDimension(browserDimension);
             this.k.setStatsCommonDimension(statsCommonDimension);
+            this.v.setId(url);
+            this.v.setTime(stime);
             context.write(this.k,this.v);//输出
         }
     }

@@ -25,8 +25,6 @@ import java.io.IOException;
  * @since 1.0.0
  */
 public class LogWritable implements Writable {
-    private String logs;
-    private String info;
     private String ver;
     private String s_time;
     private String en;
@@ -61,8 +59,6 @@ public class LogWritable implements Writable {
 
     @Override
     public void write(DataOutput dataOutput) throws IOException {
-        dataOutput.writeUTF(logs);
-        dataOutput.writeUTF(info);
         dataOutput.writeUTF(ver);
         dataOutput.writeUTF(s_time);
         dataOutput.writeUTF(en);
@@ -98,8 +94,6 @@ public class LogWritable implements Writable {
 
     @Override
     public void readFields(DataInput dataInput) throws IOException {
-        this.logs = dataInput.readUTF();
-        this.info = dataInput.readUTF();
         this.ver= dataInput.readUTF();
         this.s_time= dataInput.readUTF();
         this.en= dataInput.readUTF();
@@ -131,22 +125,6 @@ public class LogWritable implements Writable {
         this.country= dataInput.readUTF();
         this.province= dataInput.readUTF();
         this.city= dataInput.readUTF();
-    }
-
-    public String getLogs() {
-        return logs;
-    }
-
-    public void setLogs(String logs) {
-        this.logs = logs;
-    }
-
-    public String getInfo() {
-        return info;
-    }
-
-    public void setInfo(String info) {
-        this.info = info;
     }
 
     public String getVer() {

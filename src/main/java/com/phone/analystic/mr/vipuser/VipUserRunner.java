@@ -10,13 +10,18 @@
  */
 package com.phone.analystic.mr.vipuser;
 
+import com.phone.Util.JdbcUtil;
 import com.phone.Util.TimeUtil;
 import com.phone.analystic.modle.StatsUserDimension;
+import com.phone.analystic.modle.base.DateDimension;
 import com.phone.analystic.modle.value.map.TimeOutPutValue;
 import com.phone.analystic.modle.value.reduce.OutPutWritable;
 import com.phone.analystic.mr.OutputToMySqlFormat;
 import com.phone.analystic.mr.newuser.NewUserMapper;
 import com.phone.analystic.mr.newuser.NewUserReducer;
+import com.phone.analystic.mr.service.IDimension;
+import com.phone.analystic.mr.service.impl.IDimensionImpl;
+import com.phone.common.DateEnum;
 import com.phone.common.GlobalConstants;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -28,6 +33,11 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -55,6 +65,7 @@ public class VipUserRunner implements Tool {
     public void setConf(Configuration configuration) {
         conf.addResource("output_mapping.xml");
         conf.addResource("output_writter.xml");
+        conf.addResource("total_mapping.xml");//查询是否是新的会员
         this.conf = conf;
     }
 
@@ -91,7 +102,91 @@ public class VipUserRunner implements Tool {
 
         //设置输入参数
         this.handleInputOutput(job);
-        return job.waitForCompletion(true)? 0:1;
+//        return job.waitForCompletion(true)? 0:1;
+        if(job.waitForCompletion(true)){
+            computeNewTotalMember(job);
+            return 0;
+        }else{
+            return 1;
+        }
+    }
+
+    //计算总的新增会员---用户模块
+    private void computeNewTotalMember(Job job) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+            //获取运行当天时间和运行前一天时间
+            String date = job.getConfiguration().get(GlobalConstants.RUNNING_DATE);
+            long nowDay = TimeUtil.parseString2Long(date);
+            long yesterDay = nowDay - GlobalConstants.DAY_OF_MILISECONDS;
+
+            //获取对应的时间维度
+            DateDimension nowDateDimension = DateDimension.buildDate(nowDay, DateEnum.DAY);
+            DateDimension yesterdayDimension = DateDimension.buildDate(yesterDay, DateEnum.DAY);
+
+            int nowDimensionId = -1;
+            int yesterdayDimensionId = -1;
+
+            //获取维度的id
+            IDimension iDimension = new IDimensionImpl();
+            nowDimensionId = iDimension.getDimensionIdByObject(nowDateDimension);
+            yesterdayDimensionId = iDimension.getDimensionIdByObject(yesterdayDimension);
+
+            //判断对应的时间维度id是否大于0
+            conn = JdbcUtil.getConn();
+            Map<String,Integer> map = new HashMap<String,Integer>();
+            if(yesterdayDimensionId > 0){
+                ps = conn.prepareStatement(conf.get(GlobalConstants.PREFIX_TOTAL+"new_total_member"));
+                //给ps赋值
+                ps.setInt(1,yesterdayDimensionId);
+                //执行SQL语句
+                rs = ps.executeQuery();
+                while(rs.next()){
+                    int platformId = rs.getInt("platform_dimension_id");
+                    int totalNewMemberUser = rs.getInt("total_members");
+                    //存储
+                    map.put(platformId+"",totalNewMemberUser);
+                }
+            }
+
+            if(nowDimensionId > 0){
+                ps = conn.prepareStatement(conf.get(GlobalConstants.PREFIX_TOTAL+"user_new_member"));
+                //给ps赋值
+                ps.setInt(1,nowDimensionId);
+                //执行SQL语句
+                rs = ps.executeQuery();
+                while(rs.next()){
+                    int platformId = rs.getInt("platform_dimension_id");
+                    int newMemberUser = rs.getInt("new_members");
+                    //存储
+                    //如果前一天中有相同的platformId,则将两者相加
+                    if(map.containsKey(platformId+"")){
+                        newMemberUser += map.get(platformId+"");
+                    }
+                    //如果没有当天该平台下的总新增用户就是当天新增用户，添加到map中，为后一天计算准备
+                    map.put(platformId+"",newMemberUser);
+                }
+            }
+
+            //更新新增的总用户
+            ps = conn.prepareStatement(conf.get(GlobalConstants.PREFIX_TOTAL+"user_new_update_member"));
+            //给ps赋值
+            for(Map.Entry<String,Integer> en:map.entrySet()){
+                ps.setInt(1,nowDimensionId);
+                ps.setInt(2,Integer.parseInt(en.getKey()));
+                ps.setInt(3,en.getValue());
+                ps.setString(4,conf.get(GlobalConstants.RUNNING_DATE));
+                ps.setInt(5,en.getValue());
+                ps.execute();
+            }
+        } catch (Exception e) {
+            logger.warn("运行统计总的新增用户失败！！！",e);
+        }finally {
+            JdbcUtil.close(conn,ps,rs);
+        }
     }
 
     /**
