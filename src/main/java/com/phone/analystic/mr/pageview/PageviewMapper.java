@@ -36,7 +36,6 @@ import java.io.IOException;
  * @create 2018/9/19 
  * @since 1.0.0
  *
- *
  * 注意点：每次测试前都要清空数据库中的数据
  * 新建查询---执行所有的SQL语句
  * 如下：

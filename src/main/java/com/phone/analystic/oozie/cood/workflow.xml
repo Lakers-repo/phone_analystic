@@ -1,0 +1,27 @@
+<workflow-app name='lda' xmlns="uri:oozie:workflow:0.3">
+    <start to="sub-workflow-xhb-mr" />
+
+    <action name="sub-workflow-xhb-mr">
+        <sub-workflow>
+            <app-path>${nameNode}/${examplesRoot}mr</app-path>
+            <propagete-configuration />
+        </sub-workflow>
+        <ok to="sub-workflow-xhb-hive" />
+        <error to="kill" />
+    </action> 
+
+    <action name="sub-workflow-xhb-hive">
+        <sub-workflow>
+            <app-path>${nameNode}/${examplesRoot}hive</app-path>
+            <propagete-configuration />
+        </sub-workflow>
+        <ok to="end" />
+        <error to="kill" />
+    </action>
+
+    <kill name="kill">
+        <message>mapreduce failed, error message:${wf:errorMessage(wf:lastErrorNode())}</message>
+    </kill>
+
+    <end name="end" />
+</workflow-app>

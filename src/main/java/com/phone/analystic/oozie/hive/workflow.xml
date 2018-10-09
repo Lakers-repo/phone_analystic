@@ -1,0 +1,81 @@
+<workflow-app xmlns="uri:oozie:workflow:0.4" name="xhb_hive">
+    <start to="etl_hive"/>
+
+    <action name="etl_hive">
+        <java>
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <main-class>com.phone.etl.mr.ETLToHdfsRunner</main-class>
+            <arg>-d</arg>
+            <arg>${run_date}</arg>
+        </java>
+        <ok to="en_hive"/>
+        <error to="fail"/>
+    </action>
+
+    <action name="en_hive">
+        <shell xmlns="uri:oozie:shell-action:0.2">
+        <job-tracker>${jobTracker}</job-tracker>
+        <name-node>${nameNode}</name-node>
+        <configuration>
+            <property>
+                <name>mapred.job.queue.name</name>
+                <value>${queueName}</value>
+            </property>
+        </configuration>
+        <exec>en.sh</exec>
+        <argument>-d</argument>
+        <argument>${run_date}</argument>
+        <file>en.sh</file>
+        <capture-output/>
+        </shell>
+        <ok to="dp_hive"/>
+        <error to="fail"/>
+    </action>
+
+
+    <action name="dp_hive">
+        <shell xmlns="uri:oozie:shell-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <exec>vd.sh</exec>
+            <argument>-d</argument>
+            <argument>${run_date}</argument>
+            <file>vd.sh</file>
+            <capture-output/>
+        </shell>
+        <ok to="order_hive"/>
+        <error to="fail"/>
+    </action>
+
+    <action name="order_hive">
+        <shell xmlns="uri:oozie:shell-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <exec>od.sh</exec>
+            <argument>-d</argument>
+            <argument>${run_date}</argument>
+            <file>od.sh</file>
+            <capture-output/>
+        </shell>
+        <ok to="end"/>
+        <error to="fail"/>
+    </action>
+
+    <kill name="fail">
+        <message>Shell action failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <end name="end"/>
+</workflow-app>
